@@ -1,5 +1,5 @@
-#ifndef ADS131M04_h
-#define ADS131M04_h
+#ifndef ADS131M02_h
+#define ADS131M02_h
 
 #include "Arduino.h"
 
@@ -8,8 +8,6 @@ struct adcOutput
   uint16_t status;
   int32_t ch0;
   int32_t ch1;
-  int32_t ch2;
-  int32_t ch3;
 };
 
 #define DRDY_STATE_LOGIC_HIGH 0 // DEFAULS
@@ -54,7 +52,7 @@ struct adcOutput
 #define CMD_WRITE_REG 0x6000
 
 // Responses
-#define RSP_RESET_OK 0xFF24
+#define RSP_RESET_OK 0xFF22
 #define RSP_RESET_NOK 0x0011
 
 // Registers Read Only
@@ -83,19 +81,6 @@ struct adcOutput
 #define REG_CH1_GCAL_MSB 0x11
 #define REG_CH1_GCAL_LSB 0x12
 
-// Registers Channel 2 Specific
-#define REG_CH2_CFG 0x13
-#define REG_CH2_OCAL_MSB 0x14
-#define REG_CH2_OCAL_LSB 0x15
-#define REG_CH2_GCAL_MSB 0x16
-#define REG_CH2_GCAL_LSB 0x17
-
-// Registers Channel 3 Specific
-#define REG_CH3_CFG 0x18
-#define REG_CH3_OCAL_MSB 0x19
-#define REG_CH3_OCAL_LSB 0x1A
-#define REG_CH3_GCAL_MSB 0x1B
-#define REG_CH3_GCAL_LSB 0x1C
 
 // Registers MAP CRC
 #define REG_MAP_CRC 0x3E
@@ -112,7 +97,7 @@ struct adcOutput
 #define REGMASK_STATUS_REGMAP 0x2000
 #define REGMASK_STATUS_CRC_ERR 0x1000
 #define REGMASK_STATUS_CRC_TYPE 0x0800
-#define REGMASK_STATUS_RESET 0x0400
+#define REGMASK_STATUS_RESET 0x0200
 #define REGMASK_STATUS_WLENGTH 0x0300
 #define REGMASK_STATUS_DRDY3 0x0008
 #define REGMASK_STATUS_DRDY2 0x0004
@@ -124,7 +109,7 @@ struct adcOutput
 #define REGMASK_MODE_RX_CRC_EN 0x1000
 #define REGMASK_MODE_CRC_TYPE 0x0800
 #define REGMASK_MODE_RESET 0x0400
-#define REGMASK_MODE_WLENGTH 0x0300bool ADS131M04::setChannelPGA(uint8_t channel, uint8_t pga)
+#define REGMASK_MODE_WLENGTH 0x0300bool ADS131M02::setChannelPGA(uint8_t channel, uint8_t pga)
 #define REGMASK_MODE_TIMEOUT 0x0010
 #define REGMASK_MODE_DRDY_SEL 0x000C
 #define REGMASK_MODE_DRDY_HiZ 0x0002
@@ -234,15 +219,15 @@ struct adcOutput
 #define SPI_MASTER_DUMMY16 0xFFFF
 #define SPI_MASTER_DUMMY32 0xFFFFFFFF
 
-class ADS131M04
+class ADS131M02
 {
 public:
-  ADS131M04();
-  uint8_t ADS131M04_CS_PIN;
-  uint8_t ADS131M04_DRDY_PIN;
-  uint8_t ADS131M04_CLK_PIN;
-  uint8_t ADS131M04_MISO_PIN;
-  uint8_t ADS131M04_MOSI_PIN;
+  ADS131M02();
+  uint8_t ADS131M02_CS_PIN;
+  uint8_t ADS131M02_DRDY_PIN;
+  uint8_t ADS131M02_CLK_PIN;
+  uint8_t ADS131M02_MISO_PIN;
+  uint8_t ADS131M02_MOSI_PIN;
 
   void begin(uint8_t clk_pin, uint8_t miso_pin, uint8_t mosi_pin, uint8_t cs_pin, uint8_t drdy_pin);
   int8_t isDataReadySoft(byte channel);
