@@ -99,8 +99,6 @@ struct adcOutput
 #define REGMASK_STATUS_CRC_TYPE 0x0800
 #define REGMASK_STATUS_RESET 0x0200
 #define REGMASK_STATUS_WLENGTH 0x0300
-#define REGMASK_STATUS_DRDY3 0x0008
-#define REGMASK_STATUS_DRDY2 0x0004
 #define REGMASK_STATUS_DRDY1 0x0002
 #define REGMASK_STATUS_DRDY0 0x0001
 
@@ -116,16 +114,12 @@ struct adcOutput
 #define REGMASK_MODE_DRDY_FMT 0x0001
 
 // Mask Register CLOCK
-#define REGMASK_CLOCK_CH3_EN 0x0800
-#define REGMASK_CLOCK_CH2_EN 0x0400
 #define REGMASK_CLOCK_CH1_EN 0x0200
 #define REGMASK_CLOCK_CH0_EN 0x0100
 #define REGMASK_CLOCK_OSR 0x001C
 #define REGMASK_CLOCK_PWR 0x0003
 
 // Mask Register GAIN
-#define REGMASK_GAIN_PGAGAIN3 0x7000
-#define REGMASK_GAIN_PGAGAIN2 0x0700
 #define REGMASK_GAIN_PGAGAIN1 0x0070
 #define REGMASK_GAIN_PGAGAIN0 0x0007
 
@@ -228,8 +222,10 @@ public:
   uint8_t ADS131M02_CLK_PIN;
   uint8_t ADS131M02_MISO_PIN;
   uint8_t ADS131M02_MOSI_PIN;
+  uint8_t ADS131M02_RESET_PIN;
 
-  void begin(uint8_t clk_pin, uint8_t miso_pin, uint8_t mosi_pin, uint8_t cs_pin, uint8_t drdy_pin);
+  void begin(uint8_t clk_pin, uint8_t miso_pin, uint8_t mosi_pin, uint8_t cs_pin, uint8_t drdy_pin, uint8_t rst_pin);
+  void reset();
   int8_t isDataReadySoft(byte channel);
   bool isDataReady(void);
   bool isResetStatus(void);

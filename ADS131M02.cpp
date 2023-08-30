@@ -117,7 +117,7 @@ uint16_t ADS131M02::readRegister(uint8_t address)
   return data;
 }
 
-void ADS131M02::begin(uint8_t clk_pin, uint8_t miso_pin, uint8_t mosi_pin, uint8_t cs_pin, uint8_t drdy_pin)
+void ADS131M02::begin(uint8_t clk_pin, uint8_t miso_pin, uint8_t mosi_pin, uint8_t cs_pin, uint8_t drdy_pin, uint8_t rst_pin)
 {
   // Set pins up
   ADS131M02_CS_PIN = cs_pin;
@@ -125,13 +125,31 @@ void ADS131M02::begin(uint8_t clk_pin, uint8_t miso_pin, uint8_t mosi_pin, uint8
   ADS131M02_CLK_PIN = clk_pin;
   ADS131M02_MISO_PIN = miso_pin;
   ADS131M02_MOSI_PIN = mosi_pin;
+  ADS131M02_RESET_PIN = rst_pin;
 
-  SPI.begin(ADS131M02_CLK_PIN, ADS131M02_MISO_PIN, ADS131M02_MOSI_PIN);
+  // CLK, MISO, MOSI are set automatically by SPI.begin(), so the arguments are not actually used
+  // SPI.begin(ADS131M02_CLK_PIN, ADS131M02_MISO_PIN, ADS131M02_MOSI_PIN);
+  SPI.begin();
   SPI.beginTransaction(settings);
+
   // Configure chip select as an output
   pinMode(ADS131M02_CS_PIN, OUTPUT);
   // Configure DRDY as as input
   pinMode(ADS131M02_DRDY_PIN, INPUT);
+  // Configure reset as an output
+  pinMode(ADS131M02_RESET_PIN, OUTPUT);
+  digitalWrite(ADS131M02_RESET_PIN, HIGH);
+}
+
+void ADS131M02::reset()
+{
+  pinMode(ADS131M02_RESET_PIN, OUTPUT);
+  digitalWrite(ADS131M02_RESET_PIN, HIGH);
+  delay(100);
+  digitalWrite(ADS131M02_RESET_PIN, LOW);
+  delay(100);
+  digitalWrite(ADS131M02_RESET_PIN, HIGH);
+  delay(1);
 }
 
 int8_t ADS131M02::isDataReadySoft(byte channel)
