@@ -360,8 +360,8 @@ adcOutput ADS131M02::readADC(double vcc)
   adcOutput_raw raw = readADC_raw();
 
   double aa = (long)2 << 22;
-  res.ch0 = raw.ch0 / aa * 1.6;
-  res.ch1 = raw.ch1 / aa * 1.6;
+  res.ch0 = raw.ch0 / aa * vcc/2.0;
+  res.ch1 = raw.ch1 / aa * vcc/2.0;
 
   res.ch0 = res.ch0 >= vcc/2.0 ? res.ch0 - vcc : res.ch0;
   res.ch1 = res.ch1 >= vcc/2.0 ? res.ch1 - vcc : res.ch1;
