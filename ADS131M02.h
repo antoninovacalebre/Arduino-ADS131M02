@@ -3,11 +3,17 @@
 
 #include "Arduino.h"
 
-struct adcOutput
+struct adcOutput_raw
 {
   uint16_t status;
   int32_t ch0;
   int32_t ch1;
+};
+
+struct adcOutput
+{
+  double ch0;
+  double ch1;
 };
 
 #define DRDY_STATE_LOGIC_HIGH 0 // DEFAULS
@@ -219,12 +225,9 @@ public:
   ADS131M02();
   uint8_t ADS131M02_CS_PIN;
   uint8_t ADS131M02_DRDY_PIN;
-  uint8_t ADS131M02_CLK_PIN;
-  uint8_t ADS131M02_MISO_PIN;
-  uint8_t ADS131M02_MOSI_PIN;
   uint8_t ADS131M02_RESET_PIN;
 
-  void begin(uint8_t clk_pin, uint8_t miso_pin, uint8_t mosi_pin, uint8_t cs_pin, uint8_t drdy_pin, uint8_t rst_pin);
+  void begin(uint8_t clkin_pin, uint8_t cs_pin, uint8_t drdy_pin, uint8_t rst_pin);
   void reset();
   int8_t isDataReadySoft(byte channel);
   bool isDataReady(void);
@@ -241,7 +244,8 @@ public:
   bool setChannelOffsetCalibration(uint8_t channel, int32_t offset);
   bool setChannelGainCalibration(uint8_t channel, uint32_t gain);
   bool setOsr(uint16_t osr);
-  adcOutput readADC(void);
+  adcOutput_raw readADC_raw(void);
+  adcOutput readADC(double vcc);
 
 private:
   uint8_t writeRegister(uint8_t address, uint16_t value);

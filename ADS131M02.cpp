@@ -117,18 +117,14 @@ uint16_t ADS131M02::readRegister(uint8_t address)
   return data;
 }
 
-void ADS131M02::begin(uint8_t clk_pin, uint8_t miso_pin, uint8_t mosi_pin, uint8_t cs_pin, uint8_t drdy_pin, uint8_t rst_pin)
+void ADS131M02::begin(uint8_t clkin_pin, uint8_t cs_pin, uint8_t drdy_pin, uint8_t rst_pin)
 {
   // Set pins up
   ADS131M02_CS_PIN = cs_pin;
   ADS131M02_DRDY_PIN = drdy_pin;
-  ADS131M02_CLK_PIN = clk_pin;
-  ADS131M02_MISO_PIN = miso_pin;
-  ADS131M02_MOSI_PIN = mosi_pin;
   ADS131M02_RESET_PIN = rst_pin;
 
   // CLK, MISO, MOSI are set automatically by SPI.begin(), so the arguments are not actually used
-  // SPI.begin(ADS131M02_CLK_PIN, ADS131M02_MISO_PIN, ADS131M02_MOSI_PIN);
   SPI.begin();
   SPI.beginTransaction(settings);
 
@@ -139,6 +135,12 @@ void ADS131M02::begin(uint8_t clk_pin, uint8_t miso_pin, uint8_t mosi_pin, uint8
   // Configure reset as an output
   pinMode(ADS131M02_RESET_PIN, OUTPUT);
   digitalWrite(ADS131M02_RESET_PIN, HIGH);
+
+  // 4 MHz clock output for ADC clk_in
+  pinMode(clkin_pin, OUTPUT);
+  TCCR1A = bit (COM1A0);                // toggle OC1A on Compare Match
+  TCCR1B = bit (WGM12) | bit (CS10);    // CTC, no prescaling
+  OCR1A =  1;                           // output every other cycle
 }
 
 void ADS131M02::reset()
@@ -184,11 +186,9 @@ bool ADS131M02::setDrdyFormat(uint8_t drdyFormat)
   {
     return false;
   }
-  else
-  {
-    writeRegisterMasked(REG_MODE, drdyFormat, REGMASK_MODE_DRDY_FMT);
-    return true;
-  }
+
+  writeRegisterMasked(REG_MODE, drdyFormat, REGMASK_MODE_DRDY_FMT);
+  return true;
 }
 
 bool ADS131M02::setDrdyStateWhenUnavailable(uint8_t drdyState)
@@ -197,11 +197,9 @@ bool ADS131M02::setDrdyStateWhenUnavailable(uint8_t drdyState)
   {
     return false;
   }
-  else
-  {
-    writeRegisterMasked(REG_MODE, drdyState < 1, REGMASK_MODE_DRDY_HiZ);
-    return true;
-  }
+
+  writeRegisterMasked(REG_MODE, drdyState < 1, REGMASK_MODE_DRDY_HiZ);
+  return true;
 }
 
 bool ADS131M02::setPowerMode(uint8_t powerMode)
@@ -210,11 +208,9 @@ bool ADS131M02::setPowerMode(uint8_t powerMode)
   {
     return false;
   }
-  else
-  {
-    writeRegisterMasked(REG_CLOCK, powerMode, REGMASK_CLOCK_PWR);
-    return true;
-  }
+  
+  writeRegisterMasked(REG_CLOCK, powerMode, REGMASK_CLOCK_PWR);
+  return true;
 }
 
 bool ADS131M02::setOsr(uint16_t osr)
@@ -223,19 +219,13 @@ bool ADS131M02::setOsr(uint16_t osr)
   {
     return false;
   }
-  else
-  {
-    writeRegisterMasked(REG_CLOCK, osr << 2 , REGMASK_CLOCK_OSR);
-    return true;
-  }
+  
+  writeRegisterMasked(REG_CLOCK, osr << 2 , REGMASK_CLOCK_OSR);
+  return true;
 }
 
 bool ADS131M02::setChannelEnable(uint8_t channel, uint16_t enable)
 {
-  if (channel > 1)
-  {
-    return false;
-  }
   if (channel == 0)
   {
     writeRegisterMasked(REG_CLOCK, enable << 8, REGMASK_CLOCK_CH0_EN);
@@ -246,14 +236,12 @@ bool ADS131M02::setChannelEnable(uint8_t channel, uint16_t enable)
     writeRegisterMasked(REG_CLOCK, enable << 9, REGMASK_CLOCK_CH1_EN);
     return true;
   }
+
+  return false;
 }
 
 bool ADS131M02::setChannelPGA(uint8_t channel, uint16_t pga)
 {
-  if (channel > 1)
-  {
-    return false;
-  }
   if (channel == 0)
   {
     writeRegisterMasked(REG_GAIN, pga, REGMASK_GAIN_PGAGAIN0);
@@ -264,6 +252,8 @@ bool ADS131M02::setChannelPGA(uint8_t channel, uint16_t pga)
     writeRegisterMasked(REG_GAIN, pga << 4, REGMASK_GAIN_PGAGAIN1);
     return true;
   }
+
+  return false;
 }
 
 void ADS131M02::setGlobalChop(uint16_t global_chop)
@@ -278,10 +268,6 @@ void ADS131M02::setGlobalChopDelay(uint16_t delay)
 
 bool ADS131M02::setInputChannelSelection(uint8_t channel, uint8_t input)
 {
-  if (channel > 1)
-  {
-    return false;
-  }
   if (channel == 0)
   {
     writeRegisterMasked(REG_CH0_CFG, input, REGMASK_CHX_CFG_MUX);
@@ -292,6 +278,8 @@ bool ADS131M02::setInputChannelSelection(uint8_t channel, uint8_t input)
     writeRegisterMasked(REG_CH1_CFG, input, REGMASK_CHX_CFG_MUX);
     return true;
   }
+
+  return false;
 }
 
 bool ADS131M02::setChannelOffsetCalibration(uint8_t channel, int32_t offset)
@@ -300,10 +288,6 @@ bool ADS131M02::setChannelOffsetCalibration(uint8_t channel, int32_t offset)
   uint16_t MSB = offset >> 8;
   uint8_t LSB = offset;
 
-  if (channel > 1)
-  {
-    return false;
-  }
   if (channel == 0)
   {
     writeRegisterMasked(REG_CH0_OCAL_MSB, MSB, 0xFFFF);
@@ -316,6 +300,8 @@ bool ADS131M02::setChannelOffsetCalibration(uint8_t channel, int32_t offset)
     writeRegisterMasked(REG_CH1_OCAL_LSB, LSB << 8, REGMASK_CHX_OCAL0_LSB);
     return true;
   }
+
+  return false;
 }
 
 bool ADS131M02::setChannelGainCalibration(uint8_t channel, uint32_t gain)
@@ -324,10 +310,6 @@ bool ADS131M02::setChannelGainCalibration(uint8_t channel, uint32_t gain)
   uint16_t MSB = gain >> 8;
   uint8_t LSB = gain;
 
-  if (channel > 1)
-  {
-    return false;
-  }
   if (channel == 0)
   {
     writeRegisterMasked(REG_CH0_GCAL_MSB, MSB, 0xFFFF);
@@ -340,65 +322,49 @@ bool ADS131M02::setChannelGainCalibration(uint8_t channel, uint32_t gain)
     writeRegisterMasked(REG_CH1_GCAL_LSB, LSB << 8, REGMASK_CHX_GCAL0_LSB);
     return true;
   }
+
+  return false;
 }
 
 bool ADS131M02::isDataReady()
 {
-  if (digitalRead(ADS131M02_DRDY_PIN) == HIGH)
-  {
-    return false;
-  }
-  return true;
+  return digitalRead(ADS131M02_DRDY_PIN) == LOW;
 }
 
-adcOutput ADS131M02::readADC(void)
+adcOutput_raw ADS131M02::readADC_raw(void)
 {
-  uint8_t x = 0;
-  uint8_t x2 = 0;
-  uint8_t x3 = 0;
-  int32_t aux;
-  adcOutput res;
+  adcOutput_raw res;
+  byte a[12];
 
   digitalWrite(ADS131M02_CS_PIN, LOW);
+  delay(1);
+
+  for(int i=0; i<12; i++) {
+    a[i] = SPI.transfer(0x00); // Send dummy byte to receive data
+  }
+
+  res.status = ((long)a[0] << 8) | a[1];
+  res.ch0 = ((long)a[3] << 16) | ((long)a[4] << 8) | a[5];
+  res.ch1 = ((long)a[6] << 16) | ((long)a[7] << 8) | a[8];
+
   delayMicroseconds(1);
+  digitalWrite(ADS131M02_CS_PIN, HIGH);
 
-  x = SPI.transfer(0x00);
-  x2 = SPI.transfer(0x00);
-  SPI.transfer(0x00);
+  return res;
+}
 
-  res.status = ((x << 8) | x2);
+adcOutput ADS131M02::readADC(double vcc)
+{
+  adcOutput res;
 
-  x = SPI.transfer(0x00);
-  x2 = SPI.transfer(0x00);
-  x3 = SPI.transfer(0x00);
+  adcOutput_raw raw = readADC_raw();
 
-  aux = (((x << 16) | (x2 << 8) | x3) & 0x00FFFFFF);
-  if (aux > 0x7FFFFF)
-  {
-    res.ch0 = ((~(aux)&0x00FFFFFF) + 1) * -1;
-  }
-  else
-  {
-    res.ch0 = aux;
-  }
+  double aa = (long)2 << 22;
+  res.ch0 = raw.ch0 / aa * 1.6;
+  res.ch1 = raw.ch1 / aa * 1.6;
 
-  x = SPI.transfer(0x00);
-  x2 = SPI.transfer(0x00);
-  x3 = SPI.transfer(0x00);
-
-  aux = (((x << 16) | (x2 << 8) | x3) & 0x00FFFFFF);
-  if (aux > 0x7FFFFF)
-  {
-    res.ch1 = ((~(aux)&0x00FFFFFF) + 1) * -1;
-  }
-  else
-  {
-    res.ch1 = aux;
-  }
-
-  SPI.transfer(0x00);
-  SPI.transfer(0x00);
-  SPI.transfer(0x00);
+  res.ch0 = res.ch0 >= vcc/2.0 ? res.ch0 - vcc : res.ch0;
+  res.ch1 = res.ch1 >= vcc/2.0 ? res.ch1 - vcc : res.ch1;
 
   delayMicroseconds(1);
   digitalWrite(ADS131M02_CS_PIN, HIGH);
