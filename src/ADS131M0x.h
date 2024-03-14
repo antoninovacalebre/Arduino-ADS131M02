@@ -1,20 +1,10 @@
-#ifndef ADS131M02_h
-#define ADS131M02_h
+#ifndef ADS131M0x_h
+#define ADS131M0x_h
 
 #include "Arduino.h"
+#include <SPI.h>
 
-struct adcOutput_raw
-{
-  uint16_t status;
-  int32_t ch0;
-  int32_t ch1;
-};
-
-struct adcOutput
-{
-  double ch0;
-  double ch1;
-};
+#define MAX_CHANNELS 4
 
 #define DRDY_STATE_LOGIC_HIGH 0 // DEFAULS
 #define DRDY_STATE_HI_Z 1
@@ -40,12 +30,11 @@ struct adcOutput
 #define OSR_128 0
 #define OSR_256 1
 #define OSR_512 2
-#define OSR_1024 3      // defaulT
+#define OSR_1024 3 // defaulT
 #define OSR_2018 4
 #define OSR_4096 5
 #define OSR_8192 6
 #define OSR_16384 7
-
 
 // Commands
 #define CMD_NULL 0x0000 // This command gives the STATUS REGISTER
@@ -58,7 +47,8 @@ struct adcOutput
 #define CMD_WRITE_REG 0x6000
 
 // Responses
-#define RSP_RESET_OK 0xFF22
+#define RSP_RESET_OK_M04 0xFF24
+#define RSP_RESET_OK_M02 0xFF22
 #define RSP_RESET_NOK 0x0011
 
 // Registers Read Only
@@ -87,6 +77,19 @@ struct adcOutput
 #define REG_CH1_GCAL_MSB 0x11
 #define REG_CH1_GCAL_LSB 0x12
 
+// Registers Channel 2 Specific
+#define REG_CH2_CFG 0x13
+#define REG_CH2_OCAL_MSB 0x14
+#define REG_CH2_OCAL_LSB 0x15
+#define REG_CH2_GCAL_MSB 0x16
+#define REG_CH2_GCAL_LSB 0x17
+
+// Registers Channel 3 Specific
+#define REG_CH3_CFG 0x18
+#define REG_CH3_OCAL_MSB 0x19
+#define REG_CH3_OCAL_LSB 0x1A
+#define REG_CH3_GCAL_MSB 0x1B
+#define REG_CH3_GCAL_LSB 0x1C
 
 // Registers MAP CRC
 #define REG_MAP_CRC 0x3E
@@ -103,8 +106,11 @@ struct adcOutput
 #define REGMASK_STATUS_REGMAP 0x2000
 #define REGMASK_STATUS_CRC_ERR 0x1000
 #define REGMASK_STATUS_CRC_TYPE 0x0800
-#define REGMASK_STATUS_RESET 0x0200
+#define REGMASK_STATUS_RESET_M04 0x0400
+#define REGMASK_STATUS_RESET_M02 0x0200
 #define REGMASK_STATUS_WLENGTH 0x0300
+#define REGMASK_STATUS_DRDY3 0x0008
+#define REGMASK_STATUS_DRDY2 0x0004
 #define REGMASK_STATUS_DRDY1 0x0002
 #define REGMASK_STATUS_DRDY0 0x0001
 
@@ -113,19 +119,23 @@ struct adcOutput
 #define REGMASK_MODE_RX_CRC_EN 0x1000
 #define REGMASK_MODE_CRC_TYPE 0x0800
 #define REGMASK_MODE_RESET 0x0400
-#define REGMASK_MODE_WLENGTH 0x0300bool ADS131M02::setChannelPGA(uint8_t channel, uint8_t pga)
+#define REGMASK_MODE_WLENGTH 0x0300
 #define REGMASK_MODE_TIMEOUT 0x0010
 #define REGMASK_MODE_DRDY_SEL 0x000C
 #define REGMASK_MODE_DRDY_HiZ 0x0002
 #define REGMASK_MODE_DRDY_FMT 0x0001
 
 // Mask Register CLOCK
+#define REGMASK_CLOCK_CH3_EN 0x0800
+#define REGMASK_CLOCK_CH2_EN 0x0400
 #define REGMASK_CLOCK_CH1_EN 0x0200
 #define REGMASK_CLOCK_CH0_EN 0x0100
 #define REGMASK_CLOCK_OSR 0x001C
 #define REGMASK_CLOCK_PWR 0x0003
 
 // Mask Register GAIN
+#define REGMASK_GAIN_PGAGAIN3 0x7000
+#define REGMASK_GAIN_PGAGAIN2 0x0700
 #define REGMASK_GAIN_PGAGAIN1 0x0070
 #define REGMASK_GAIN_PGAGAIN0 0x0007
 
@@ -219,37 +229,48 @@ struct adcOutput
 #define SPI_MASTER_DUMMY16 0xFFFF
 #define SPI_MASTER_DUMMY32 0xFFFFFFFF
 
-class ADS131M02
+class ADS131M0x
 {
 public:
-  ADS131M02();
-  uint8_t ADS131M02_CS_PIN;
-  uint8_t ADS131M02_DRDY_PIN;
-  uint8_t ADS131M02_RESET_PIN;
+    ADS131M0x();
 
-  void begin(uint8_t clkin_pin, uint8_t cs_pin, uint8_t drdy_pin, uint8_t rst_pin);
-  void reset();
-  int8_t isDataReadySoft(byte channel);
-  bool isDataReady(void);
-  bool isResetStatus(void);
-  bool isLockSPI(void);
-  bool setDrdyFormat(uint8_t drdyFormat);
-  bool setDrdyStateWhenUnavailable(uint8_t drdyState);
-  bool setPowerMode(uint8_t powerMode);
-  bool setChannelEnable(uint8_t channel, uint16_t enable);
-  bool setChannelPGA(uint8_t channel, uint16_t pga);
-  void setGlobalChop(uint16_t global_chop);
-  void setGlobalChopDelay(uint16_t delay);
-  bool setInputChannelSelection(uint8_t channel, uint8_t input);
-  bool setChannelOffsetCalibration(uint8_t channel, int32_t offset);
-  bool setChannelGainCalibration(uint8_t channel, uint32_t gain);
-  bool setOsr(uint16_t osr);
-  adcOutput_raw readADC_raw(void);
-  adcOutput readADC(double vcc);
+    uint8_t ADS131M0x_CS_PIN;
+    uint8_t ADS131M0x_DRDY_PIN;
+    uint8_t ADS131M0x_RESET_PIN;
 
+    SPIClass *_spi_port = NULL;
+
+    void begin(uint8_t nchannels, SPIClass &spi_port, uint8_t cs_pin, uint8_t drdy_pin, uint8_t rst_pin);
+    void reset();
+    bool read_data_if_ready();
+    
+    double get_channel_voltage(uint8_t channel);
+    int32_t get_channel_byte(uint8_t channel);
+    uint16_t get_status();
+
+    int8_t is_data_ready_soft(byte channel);
+    bool is_data_ready(void);
+    bool is_reset_status(void);
+    bool is_lock_SPI(void);
+    bool set_drdy_format(uint8_t drdyFormat);
+    bool set_drdy_state_when_unavailable(uint8_t drdyState);
+    bool set_power_mode(uint8_t powerMode);
+    bool set_channel_enable(uint8_t channel, uint16_t enable);
+    bool set_channel_pga(uint8_t channel, uint16_t pga);
+    void set_global_chop(uint16_t global_chop);
+    void set_global_chop_delay(uint16_t delay);
+    bool set_input_channel_selection(uint8_t channel, uint8_t input);
+    bool set_channel_offset_calibration(uint8_t channel, int32_t offset);
+    bool set_channel_gain_calibration(uint8_t channel, uint32_t gain);
+    bool set_osr(uint16_t osr);
+    
 private:
-  uint8_t writeRegister(uint8_t address, uint16_t value);
-  void writeRegisterMasked(uint8_t address, uint16_t value, uint16_t mask);
-  uint16_t readRegister(uint8_t address);
+    uint16_t status;
+    int32_t measurements[MAX_CHANNELS];
+    uint8_t nchannels;    
+
+    uint8_t write_register(uint8_t address, uint16_t value);
+    void write_register_masked(uint8_t address, uint16_t value, uint16_t mask);
+    uint16_t read_register(uint8_t address);
 };
 #endif
