@@ -3,7 +3,7 @@
 
 #include <ADS131M0x.h>
 
-#define BAUDRATE 500000
+#define BAUDRATE 115200
 #define TIMEOUT 500
 
 // On Arduino Uno, default SPI pins are:
@@ -37,12 +37,6 @@ void setup()
 
 void loop()
 {
-    if (Serial.available() == 0)
-    {
-        delay(10);
-        return;
-    }
-
     bool adc_ok = adc.read_data_if_ready();
     if (adc_ok)
     {
