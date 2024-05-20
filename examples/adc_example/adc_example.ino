@@ -1,6 +1,5 @@
 #include <Arduino.h>
 #include <SPI.h>
-#include <ArduinoJson.h>
 
 #include <ADS131M0x.h>
 
@@ -50,7 +49,7 @@ void loop()
         Serial.print(String(adc.get_channel_voltage(0)));
         Serial.print("\t\t");
         Serial.println(String(adc.get_channel_voltage(1)));
-        delay(500)
+        delay(500);
     }
     else
     {
