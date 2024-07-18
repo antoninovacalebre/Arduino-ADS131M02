@@ -243,7 +243,8 @@ public:
     void begin(uint8_t nchannels, SPIClass &spi_port, uint8_t cs_pin, uint8_t drdy_pin, uint8_t rst_pin);
     void reset();
     bool read_data_if_ready();
-    
+    void read_blocking();
+
     double get_channel_voltage(uint8_t channel);
     int32_t get_channel_byte(uint8_t channel);
     uint16_t get_status();
@@ -263,11 +264,11 @@ public:
     bool set_channel_offset_calibration(uint8_t channel, int32_t offset);
     bool set_channel_gain_calibration(uint8_t channel, uint32_t gain);
     bool set_osr(uint16_t osr);
-    
+
 private:
     uint16_t status;
     int32_t measurements[MAX_CHANNELS];
-    uint8_t nchannels;    
+    uint8_t nchannels;
 
     uint8_t write_register(uint8_t address, uint16_t value);
     void write_register_masked(uint8_t address, uint16_t value, uint16_t mask);

@@ -18,14 +18,18 @@ void ADS131M0x::begin(uint8_t nchannels, SPIClass &spi_port, uint8_t cs_pin, uin
 
     // Configure chip select as an output
     pinMode(ADS131M0x_CS_PIN, OUTPUT);
-    digitalWrite(ADS131M0x_CS_PIN, HIGH);
+    digitalWrite(ADS131M0x_CS_PIN, LOW);
+    delay(1);
 
     // Configure DRDY as as input
-    pinMode(ADS131M0x_DRDY_PIN, INPUT);
+    pinMode(ADS131M0x_DRDY_PIN, INPUT_PULLUP);
 
     // Configure reset as an output
     pinMode(ADS131M0x_RESET_PIN, OUTPUT);
     digitalWrite(ADS131M0x_RESET_PIN, HIGH);
+
+    digitalWrite(ADS131M0x_CS_PIN, HIGH);
+    delay(1);
 }
 
 void ADS131M0x::reset()
@@ -41,15 +45,15 @@ void ADS131M0x::reset()
 
 bool ADS131M0x::read_data_if_ready()
 {
+    digitalWrite(ADS131M0x_CS_PIN, LOW);
+    delay(1);
+
     if (!is_data_ready())
     {
         return false;
     }
 
     byte a[6 + MAX_CHANNELS * 3];
-
-    digitalWrite(ADS131M0x_CS_PIN, LOW);
-    delay(1);
 
     for (int i = 0; i < 6 + nchannels * 3; i++)
     {
@@ -65,9 +69,42 @@ bool ADS131M0x::read_data_if_ready()
     }
 
     delayMicroseconds(1);
+
     digitalWrite(ADS131M0x_CS_PIN, HIGH);
+    delay(1);
 
     return true;
+}
+
+void ADS131M0x::read_blocking()
+{
+    digitalWrite(ADS131M0x_CS_PIN, LOW);
+    delay(1);
+
+    while (!is_data_ready())
+    {
+        delayMicroseconds(1);
+    }
+
+    byte a[6 + MAX_CHANNELS * 3];
+
+    for (int i = 0; i < 6 + nchannels * 3; i++)
+    {
+        a[i] = _spi_port->transfer(0x00); // Send dummy byte to receive data
+    }
+
+    status = ((long)a[0] << 8) | a[1];
+
+    for (int i = 0; i < nchannels; i++)
+    {
+        int j = (i + 1) * 3;
+        measurements[i] = ((long)a[j] << 16) | ((long)a[j + 1] << 8) | a[j + 2];
+    }
+
+    delayMicroseconds(1);
+
+    digitalWrite(ADS131M0x_CS_PIN, HIGH);
+    delay(1);
 }
 
 int32_t ADS131M0x::get_channel_byte(uint8_t channel)
@@ -99,9 +136,6 @@ uint8_t ADS131M0x::write_register(uint8_t address, uint16_t value)
     uint8_t bytesRcv;
     uint16_t cmd = 0;
 
-    digitalWrite(ADS131M0x_CS_PIN, LOW);
-    delayMicroseconds(1);
-
     cmd = (CMD_WRITE_REG) | (address << 7) | 0;
 
     // res = _spi_port->transfer16(cmd);
@@ -130,7 +164,6 @@ uint8_t ADS131M0x::write_register(uint8_t address, uint16_t value)
     _spi_port->transfer(0x00);
 
     delayMicroseconds(1);
-    digitalWrite(ADS131M0x_CS_PIN, HIGH);
 
     addressRcv = (res & REGMASK_CMD_READ_REG_ADDRESS) >> 7;
     bytesRcv = (res & REGMASK_CMD_READ_REG_BYTES);
@@ -144,6 +177,9 @@ uint8_t ADS131M0x::write_register(uint8_t address, uint16_t value)
 
 void ADS131M0x::write_register_masked(uint8_t address, uint16_t value, uint16_t mask)
 {
+    digitalWrite(ADS131M0x_CS_PIN, LOW);
+    delay(1);
+
     // Write a value to the register, applying the mask to only modify the necessary bits.
     // It does not perform bit shifting, the value should already be shifted to the correct position.
 
@@ -154,12 +190,15 @@ void ADS131M0x::write_register_masked(uint8_t address, uint16_t value, uint16_t 
     // Perform an AND operation with the current contents of the register. The bits to be modified are set to "0".
     register_contents = register_contents & ~mask;
 
-    // Perform an OR operation with the value to be loaded into the register. 
+    // Perform an OR operation with the value to be loaded into the register.
     // Note that the value should be in the correct position (shifted) already.
     register_contents = register_contents | value;
 
     // Write the register again
     write_register(address, register_contents);
+
+    digitalWrite(ADS131M0x_CS_PIN, HIGH);
+    delay(1);
 }
 
 uint16_t ADS131M0x::read_register(uint8_t address)
@@ -168,9 +207,6 @@ uint16_t ADS131M0x::read_register(uint8_t address)
     uint16_t data;
 
     cmd = CMD_READ_REG | (address << 7 | 0);
-
-    digitalWrite(ADS131M0x_CS_PIN, LOW);
-    delayMicroseconds(1);
 
     // data = _spi_port->transfer16(cmd);
     _spi_port->transfer16(cmd);
@@ -198,7 +234,7 @@ uint16_t ADS131M0x::read_register(uint8_t address)
     _spi_port->transfer(0x00);
 
     delayMicroseconds(1);
-    digitalWrite(ADS131M0x_CS_PIN, HIGH);
+
     return data;
 }
 
@@ -269,8 +305,15 @@ bool ADS131M0x::set_osr(uint16_t osr)
 {
     if (osr > 7)
         return false;
-    
+
+    digitalWrite(ADS131M0x_CS_PIN, LOW);
+    delay(1);
+
     write_register_masked(REG_CLOCK, osr << 2, REGMASK_CLOCK_OSR);
+
+    digitalWrite(ADS131M0x_CS_PIN, HIGH);
+    delay(1);
+
     return true;
 }
 
