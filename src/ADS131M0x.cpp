@@ -136,7 +136,7 @@ uint8_t ADS131M0x::write_register(uint8_t address, uint16_t value)
     uint8_t bytesRcv;
     uint16_t cmd = 0;
 
-    cmd = (CMD_WRITE_REG) | (address << 7) | 0;
+    cmd = (CMD_WRITE_REG) | (address << 7);
 
     // res = _spi_port->transfer16(cmd);
     _spi_port->transfer16(cmd);
@@ -145,23 +145,20 @@ uint8_t ADS131M0x::write_register(uint8_t address, uint16_t value)
     _spi_port->transfer16(value);
     _spi_port->transfer(0x00);
 
-    _spi_port->transfer16(0x0000);
-    _spi_port->transfer(0x00);
-
-    _spi_port->transfer16(0x0000);
-    _spi_port->transfer(0x00);
+    for (unsigned i = 0; i < nchannels; i++)
+    {
+        _spi_port->transfer16(0x0000);
+        _spi_port->transfer(0x00);
+    }
 
     res = _spi_port->transfer16(0x0000);
     _spi_port->transfer(0x00);
 
-    _spi_port->transfer16(0x0000);
-    _spi_port->transfer(0x00);
-
-    _spi_port->transfer16(0x0000);
-    _spi_port->transfer(0x00);
-
-    _spi_port->transfer16(0x0000);
-    _spi_port->transfer(0x00);
+    for (unsigned i = 0; i < nchannels + 1; i++)
+    {
+        _spi_port->transfer16(0x0000);
+        _spi_port->transfer(0x00);
+    }
 
     delayMicroseconds(1);
 
@@ -206,32 +203,25 @@ uint16_t ADS131M0x::read_register(uint8_t address)
     uint16_t cmd;
     uint16_t data;
 
-    cmd = CMD_READ_REG | (address << 7 | 0);
+    cmd = CMD_READ_REG | (address << 7);
 
-    // data = _spi_port->transfer16(cmd);
     _spi_port->transfer16(cmd);
     _spi_port->transfer(0x00);
 
-    _spi_port->transfer16(0x0000);
-    _spi_port->transfer(0x00);
-
-    _spi_port->transfer16(0x0000);
-    _spi_port->transfer(0x00);
-
-    _spi_port->transfer16(0x0000);
-    _spi_port->transfer(0x00);
+    for (unsigned i = 0; i < nchannels + 1; i++)
+    {
+        _spi_port->transfer16(0x0000);
+        _spi_port->transfer(0x00);
+    }
 
     data = _spi_port->transfer16(0x0000);
     _spi_port->transfer(0x00);
 
-    _spi_port->transfer16(0x0000);
-    _spi_port->transfer(0x00);
-
-    _spi_port->transfer16(0x0000);
-    _spi_port->transfer(0x00);
-
-    _spi_port->transfer16(0x0000);
-    _spi_port->transfer(0x00);
+    for (unsigned i = 0; i < nchannels + 1; i++)
+    {
+        _spi_port->transfer16(0x0000);
+        _spi_port->transfer(0x00);
+    }
 
     delayMicroseconds(1);
 
